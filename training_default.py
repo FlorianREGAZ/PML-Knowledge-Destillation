@@ -1,14 +1,17 @@
+import logging
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import timm
+
 
 from utils import train, evaluate, get_device, get_dataset_loader
 
 torch.manual_seed(0)
 
 device = get_device()
-print(f'Using device: {device}')
+logging.info(f'Using device: {device}')
 
 trainloader, testloader = get_dataset_loader()
 
@@ -31,6 +34,6 @@ for epoch in range(1, num_epochs + 1):
     if acc > best_acc:
         best_acc = acc
         torch.save(model.state_dict(), 'best_ghostnetv3_cifar10.pth')
-        print(f'New best accuracy: {best_acc:.2f}%, model saved.')
+        logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
-print(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')
+logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')

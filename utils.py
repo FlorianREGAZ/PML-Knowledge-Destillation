@@ -1,7 +1,28 @@
+import logging
+import os
+from datetime import datetime
+
 import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data import DataLoader
+
+
+# Setup logger to console and file
+log_dir = 'logs'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+log_filename = datetime.now().strftime('train_%Y%m%d_%H%M%S.log')
+log_path = os.path.join(log_dir, log_filename)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(log_path)
+    ]
+)
 
 def train(model, device, loader, criterion, optimizer, epoch):
     model.train()
@@ -19,7 +40,7 @@ def train(model, device, loader, criterion, optimizer, epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
         if batch_idx % 100 == 0:
-            print(f'Epoch {epoch} | Step {batch_idx}/{len(loader)} | Loss: {total_loss/(batch_idx+1):.4f} | Acc: {100.*correct/total:.2f}%')
+            logging.info(f'Epoch {epoch} | Step {batch_idx}/{len(loader)} | Loss: {total_loss/(batch_idx+1):.4f} | Acc: {100.*correct/total:.2f}%')
 
 
 def evaluate(model, device, loader, criterion):
@@ -35,7 +56,7 @@ def evaluate(model, device, loader, criterion):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
     acc = 100.*correct/total
-    print(f'Test Loss: {total_loss/len(loader):.4f} | Test Acc: {acc:.2f}%')
+    logging.info(f'Test Loss: {total_loss/len(loader):.4f} | Test Acc: {acc:.2f}%')
     return acc
 
 def get_dataset_loader():

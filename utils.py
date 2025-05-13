@@ -5,7 +5,7 @@ from datetime import datetime
 import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-from timm.optim import LAMB
+import torch_optimizer as optim
 from torch_ema import ExponentialMovingAverage
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
@@ -29,7 +29,7 @@ logging.basicConfig(
 
 # Hyperparameters
 NUM_WORKERS = 4
-BATCH_SIZE = 2048
+BATCH_SIZE = 128
 EPOCHS = 600
 LR = 0.005
 WEIGHT_DECAY = 0.05
@@ -79,7 +79,7 @@ def evaluate(model, device, loader, criterion, ema):
     return acc
 
 def get_optimizer(model):
-    optimizer = LAMB(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+    optimizer = optim.Lamb(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
     return optimizer
 
 def get_scheduler(optimizer):

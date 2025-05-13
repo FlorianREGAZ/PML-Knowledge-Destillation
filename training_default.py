@@ -2,11 +2,17 @@ import logging
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import timm
 
-
-from utils import train, evaluate, get_device, get_dataset_loader
+from utils import (
+    train,
+    evaluate,
+    get_device,
+    get_dataset_loader,
+    get_optimizer,
+    get_scheduler,
+    get_ema
+)
 
 torch.manual_seed(0)
 
@@ -21,19 +27,21 @@ model.to(device)
 
 # Loss, optimizer, scheduler
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+optimizer = get_optimizer(model)
+scheduler = get_scheduler(optimizer)
+ema = get_ema(model)
+ema.to(device)
 
 num_epochs = 100
 best_acc = 0.0
 for epoch in range(1, num_epochs + 1):
-    train(model, device, trainloader, criterion, optimizer, epoch)
-    acc = evaluate(model, device, testloader, criterion)
+    train(model, device, trainloader, criterion, optimizer, ema, epoch)
+    acc = evaluate(model, device, testloader, criterion, ema)
     scheduler.step()
     # Save best model
     if acc > best_acc:
         best_acc = acc
-        torch.save(model.state_dict(), 'best_ghostnetv3_cifar10.pth')
+        torch.save(model.state_dict(), 'default_ghostnetv3_cifar10.pth')
         logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
 logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')

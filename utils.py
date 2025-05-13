@@ -28,7 +28,7 @@ logging.basicConfig(
 )
 
 # Hyperparameters
-NUM_WORKERS = 4
+NUM_WORKERS = 1
 BATCH_SIZE = 128
 EPOCHS = 600
 LR = 0.005
@@ -55,8 +55,7 @@ def train(model, device, loader, criterion, optimizer, ema, epoch):
         correct += predicted.eq(targets).sum().item()
         if batch_idx % 100 == 0:
             logging.info(f'Epoch {epoch} | Step {batch_idx}/{len(loader)} | Loss: {total_loss/(batch_idx+1):.4f} | Acc: {100.*correct/total:.2f}%')
-
-
+        
 def evaluate(model, device, loader, criterion, ema):
     ema.store()
     ema.copy_to()

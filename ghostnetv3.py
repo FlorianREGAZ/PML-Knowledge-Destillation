@@ -244,7 +244,13 @@ class GhostModule(nn.Module):
             return out
 
         elif self.mode in ['ori_shortcut_mul_conv15']:  
-            res=self.short_conv(F.avg_pool2d(x,kernel_size=2,stride=2))
+            # avoid invalid pooling when spatial size <2
+            h, w = x.shape[-2], x.shape[-1]
+            if h < 2 or w < 2:
+                pooled = x
+            else:
+                pooled = F.avg_pool2d(x, kernel_size=2, stride=2)
+            res = self.short_conv(pooled)
             
             if self.infer_mode:
                 x1 = self.primary_conv(x)

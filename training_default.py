@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import timm
 
+import ghostnetv3
 from utils import (
     train,
     evaluate,
@@ -11,37 +12,43 @@ from utils import (
     get_dataset_loader,
     get_optimizer,
     get_scheduler,
-    get_ema
+    get_ema,
+    EPOCHS
 )
 
-torch.manual_seed(0)
+def main():
+    torch.manual_seed(0)
 
-device = get_device()
-logging.info(f'Using device: {device}')
+    device = get_device()
+    logging.info(f'Using device: {device}')
 
-trainloader, testloader = get_dataset_loader()
+    trainloader, testloader = get_dataset_loader()
 
-# Model: GhostNetV3 pretrained
-model = timm.create_model('ghostnetv3_1.0', pretrained=True, num_classes=10)
-model.to(device)
+    # Model: GhostNetV3 pretrained
+    model = timm.create_model('ghostnetv3', width=1.0, num_classes=10)
+    model.to(device)
 
-# Loss, optimizer, scheduler
-criterion = nn.CrossEntropyLoss()
-optimizer = get_optimizer(model)
-scheduler = get_scheduler(optimizer)
-ema = get_ema(model)
-ema.to(device)
+    # Loss, optimizer, scheduler
+    criterion = nn.CrossEntropyLoss()
+    optimizer = get_optimizer(model)
+    scheduler = get_scheduler(optimizer)
+    ema = get_ema(model)
+    ema.to(device)
 
-num_epochs = 100
-best_acc = 0.0
-for epoch in range(1, num_epochs + 1):
-    train(model, device, trainloader, criterion, optimizer, ema, epoch)
-    acc = evaluate(model, device, testloader, criterion, ema)
-    scheduler.step()
-    # Save best model
-    if acc > best_acc:
-        best_acc = acc
-        torch.save(model.state_dict(), 'default_ghostnetv3_cifar10.pth')
-        logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
+    best_acc = 0.0
+    for epoch in range(1, EPOCHS + 1):
+        train(model, device, trainloader, criterion, optimizer, ema, epoch)
+        acc = evaluate(model, device, testloader, criterion, ema)
+        scheduler.step()
+        # Save best model
+        if acc > best_acc:
+            best_acc = acc
+            torch.save(model.state_dict(), 'default_ghostnetv3_cifar10.pth')
+            logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
-logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')
+    logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')
+
+if __name__ == '__main__':
+    import multiprocessing
+    multiprocessing.freeze_support()
+    main()

@@ -40,7 +40,7 @@ def main():
         train(model, device, trainloader, criterion, optimizer, ema, epoch)
         acc = evaluate(model, device, testloader, criterion, ema)
         scheduler.step()
-        # Save best model
+
         if acc > best_acc:
             best_acc = acc
             torch.save(model.state_dict(), 'default_ghostnetv3_cifar10.pth')

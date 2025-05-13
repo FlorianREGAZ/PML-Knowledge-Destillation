@@ -37,20 +37,29 @@ MOMENTUM = 0.9
 EMA_DECAY = 0.9999
 
 
-def train(model, device, loader, criterion, optimizer, ema, epoch):
-    model.train()
+def train(student_model, device, loader, criterion, optimizer, ema, epoch, teacher_model=None):
+    student_model.train()
     total_loss, correct, total = 0.0, 0, 0
     for batch_idx, (inputs, targets) in enumerate(loader):
         inputs, targets = inputs.to(device), targets.to(device)
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
         optimizer.zero_grad()
+
+        if teacher_model is not None:
+            with torch.no_grad():
+                teacher_outputs = teacher_model(inputs)
+
+        student_outputs = student_model(inputs)
+        if teacher_model is not None:
+            loss = criterion(student_outputs, teacher_outputs, targets)
+        else:
+            loss = criterion(student_outputs, targets)
+        
         loss.backward()
         optimizer.step()
         ema.update()
 
         total_loss += loss.item()
-        _, predicted = outputs.max(1)
+        _, predicted = student_outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
         if batch_idx % 100 == 0:

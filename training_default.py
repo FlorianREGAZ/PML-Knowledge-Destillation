@@ -27,6 +27,7 @@ def main():
     # Model: GhostNetV3 pretrained
     model = timm.create_model('ghostnetv3', width=1.0, num_classes=10)
     model.to(device)
+    #model = torch.compile(model)
 
     # Loss, optimizer, scheduler
     criterion = nn.CrossEntropyLoss()

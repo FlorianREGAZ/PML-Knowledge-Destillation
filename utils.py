@@ -121,11 +121,11 @@ def get_dataset_loader():
         transforms.RandAugment(),  # random augmentation
         transforms.ToTensor(),
         transforms.RandomErasing(p=0.25),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
     ])
     transform_test = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
     ])
 
     # Dynamically set num_workers and pin_memory based on device
@@ -136,8 +136,8 @@ def get_dataset_loader():
     # Datasets and loaders
     trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
-    testloader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
+    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=True)
+    testloader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=True)
 
     return trainloader, testloader
 

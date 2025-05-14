@@ -131,13 +131,14 @@ def get_dataset_loader():
     # Dynamically set num_workers and pin_memory based on device
     device = get_device()
     num_workers = 0 if device == 'mps' else NUM_WORKERS
+    persistent_workers = False if num_workers == 0 else True
     pin_memory = True if device == 'cuda' else False
 
     # Datasets and loaders
     trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=True)
-    testloader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=True)
+    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=persistent_workers)
+    testloader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=persistent_workers)
 
     return trainloader, testloader
 

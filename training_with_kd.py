@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import timm
 
 import ghostnetv3
+from resnet import resnet50
 from utils import (
     train,
     evaluate,
@@ -48,14 +49,22 @@ def main():
     student = timm.create_model('ghostnetv3', width=1.0, num_classes=10).to(device)
 
     # Teacher model: ResNet-50
-    teacher = timm.create_model('resnet50', pretrained=True, num_classes=10).to(device) # TODO: have pretained resnet on cifar10
+    teacher = resnet50(pretrained=True, device=device).to(device)
     teacher.eval()  # no gradients for teacher
 
     # Loss, optimizer, scheduler
     criterion = DistillationLoss(temperature=1.0, alpha=0.5)
     optimizer = get_optimizer(student)
     scheduler = get_scheduler(optimizer)
-    ema = get_ema(student).to(device)
+    ema = get_ema(student)
+    ema.to(device)
+
+    total_params = sum(p.numel() for p in student.parameters())
+    print(f"Total parameters: {total_params}")
+
+    total_params = sum(p.numel() for p in teacher.parameters())
+    print(f"Total parameters: {total_params}")
+
 
     best_acc = 0.0
     for epoch in range(1, EPOCHS + 1):

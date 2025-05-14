@@ -5,6 +5,10 @@ Creates a GhostNet Model as defined in:
 GhostNet: More Features from Cheap Operations By Kai Han, Yunhe Wang, Qi Tian, Jianyuan Guo, Chunjing Xu, Chang Xu.
 https://arxiv.org/abs/1911.11907
 Modified from https://github.com/d-li14/mobilenetv3.pytorch and https://github.com/rwightman/pytorch-image-models
+
+
+Changes:
+- stride from 2 to 1
 """
 import torch
 import torch.nn as nn
@@ -707,7 +711,7 @@ class GhostNet(nn.Module):
 
         # building first layer
         output_channel = _make_divisible(16 * width, 4)
-        self.conv_stem = nn.Conv2d(3, output_channel, 3, 2, 1, bias=False)
+        self.conv_stem = nn.Conv2d(3, output_channel, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(output_channel)
         self.act1 = nn.ReLU(inplace=True)
         input_channel = output_channel
@@ -795,7 +799,7 @@ def ghostnetv3(**kwargs):
          [5, 960, 160, 0.25, 1]
         ]
     ]
-    return GhostNet(cfgs, num_classes=1000, width=kwargs['width'], dropout=0.2)
+    return GhostNet(cfgs, num_classes=10, width=kwargs['width'], dropout=0.2)
 
 if __name__=='__main__':
     model = ghostnetv3(width=1.0)

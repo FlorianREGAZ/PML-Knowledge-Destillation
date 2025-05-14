@@ -22,7 +22,7 @@ def sync_device(device):
 log_dir = 'logs'
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
-log_filename = datetime.now().strftime('train_%Y%m%d_%H%M%S.log')
+log_filename = datetime.now().strftime('train_default_%Y%m%d.log')
 log_path = os.path.join(log_dir, log_filename)
 
 logging.basicConfig(

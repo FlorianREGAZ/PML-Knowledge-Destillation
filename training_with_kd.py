@@ -59,13 +59,6 @@ def main():
     ema = get_ema(student)
     ema.to(device)
 
-    total_params = sum(p.numel() for p in student.parameters())
-    print(f"Total parameters: {total_params}")
-
-    total_params = sum(p.numel() for p in teacher.parameters())
-    print(f"Total parameters: {total_params}")
-
-
     best_acc = 0.0
     for epoch in range(1, EPOCHS + 1):
         train(student, device, trainloader, criterion, optimizer, ema, epoch, teacher_model=teacher)
@@ -74,7 +67,7 @@ def main():
 
         if acc > best_acc:
             best_acc = acc
-            torch.save(student.state_dict(), 'distilled_ghostnetv3_cifar10.pth')
+            torch.save(student.state_dict(), 'kd_ghostnetv3_cifar10.pth')
             logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
     logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')

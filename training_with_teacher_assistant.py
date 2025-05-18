@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import timm
 
-import ghostnetv3
-from resnet import resnet50, resnet34, resnet18
+import models.ghostnetv3 as ghostnetv3
+from models.resnet import resnet50, resnet34, resnet18
 from utils import (
     train,
     evaluate,

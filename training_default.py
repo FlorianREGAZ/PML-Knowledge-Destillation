@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import timm
 
-import ghostnetv3
+import models.ghostnetv3 as ghostnetv3
 from utils import (
     train,
     evaluate,

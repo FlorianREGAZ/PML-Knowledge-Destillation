@@ -4,8 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import timm
 
-import models.ghostnetv3 as ghostnetv3
-from models.resnet import resnet50
 from utils import (
     train,
     evaluate,
@@ -39,20 +37,39 @@ class DistillationLoss(nn.Module):
 
         return (1 - alpha) * ce_loss + alpha * kd_loss
 
+# Add ensemble teacher wrapper
+class EnsembleTeacher(nn.Module):
+    def __init__(self, teachers):
+        super().__init__()
+        self.teachers = nn.ModuleList(teachers)
+    def forward(self, x):
+        outputs = [t(x) for t in self.teachers]
+        return sum(outputs) / len(outputs)
+
+# Replace main with ensemble distillation
 def main():
     torch.manual_seed(0)
     device = get_device()
     logging.info(f'Using device: {device}')
     trainloader, testloader = get_dataset_loader()
 
-    # Student model: GhostNetV3
-    student = timm.create_model('ghostnetv3', width=1.0, num_classes=10).to(device)
+    # Initialize student
+    student = timm.create_model('ghostnetv3', width=1.0, num_classes=10)
+    student.to(device)
 
-    # Teacher model: ResNet-50
-    teacher = resnet50(pretrained=True, device=device).to(device)
-    teacher.eval()  # no gradients for teacher
+    # Initialize teachers
+    teacher_names = ['densenet161', 'vgg13_bn', 'resnet50', 'inception_v3']
+    teachers = []
+    for name in teacher_names:
+        tm = timm.create_model(name, pretrained=True, num_classes=10)
+        tm.to(device)
+        tm.eval()
+        teachers.append(tm)
+    ensemble_teacher = EnsembleTeacher(teachers)
+    ensemble_teacher.to(device)
+    ensemble_teacher.eval()
 
-    # Loss, optimizer, scheduler
+    # Setup training utilities
     criterion = DistillationLoss(temperature=1.0, alpha=0.5)
     optimizer = get_optimizer(student)
     scheduler = get_scheduler(optimizer)
@@ -60,17 +77,17 @@ def main():
     ema.to(device)
 
     best_acc = 0.0
+    ckpt_path = 'ensemble_ghostnetv3.pth'
+
     for epoch in range(1, EPOCHS + 1):
-        train(student, device, trainloader, criterion, optimizer, ema, epoch, teacher_model=teacher)
+        train(student, device, trainloader, criterion, optimizer, ema, epoch, teacher_model=ensemble_teacher)
         acc = evaluate(student, device, testloader, nn.CrossEntropyLoss(), ema)
         scheduler.step()
-
         if acc > best_acc:
             best_acc = acc
-            torch.save(student.state_dict(), 'kd_ghostnetv3_cifar10.pth')
-            logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
-
-    logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')
+            torch.save(student.state_dict(), ckpt_path)
+            logging.info(f'New best accuracy: {best_acc:.2f}%, model saved to {ckpt_path}')
+    logging.info('Ensemble distillation complete.')
 
 if __name__ == '__main__':
     import multiprocessing

@@ -48,7 +48,7 @@ def train(student_model, device, loader, criterion, optimizer, ema, epoch, teach
     total_loss, correct, total = 0.0, 0, 0
     for batch_idx, (inputs, targets) in enumerate(tqdm(loader, desc=f"Train Epoch {epoch}", unit="batch")):
         # log progress at every batch
-        logging.debug(f"Processing batch {batch_idx+1}/{len(loader)} for epoch {epoch}")
+        # logging.debug(f"Processing batch {batch_idx+1}/{len(loader)} for epoch {epoch}")
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
 
@@ -73,7 +73,7 @@ def train(student_model, device, loader, criterion, optimizer, ema, epoch, teach
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
         # Log more frequently to monitor progress
-        if batch_idx % 10 == 0:
+        if batch_idx % 100 == 0:
             logging.info(f'Epoch {epoch} | Step {batch_idx+1}/{len(loader)} | Loss: {total_loss/(batch_idx+1):.4f} | Acc: {100.*correct/total:.2f}%')
     # End of epoch logging
     logging.info(f'Epoch {epoch} training completed')

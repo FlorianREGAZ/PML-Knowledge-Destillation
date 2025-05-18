@@ -74,12 +74,7 @@ def main():
         best_acc = 0.0
         ckpt_path = f"assistant_{student_name}.pth"
 
-        if student_name == 'ghostnetv3':
-            epochs = EPOCHS
-        else:
-            epochs = 100 # because resnets are already pretrained
-
-        for epoch in range(1, epochs + 1):
+        for epoch in range(1, EPOCHS + 1):
             train(student, device, trainloader, criterion, optimizer, ema, epoch, teacher_model=teacher)
             acc = evaluate(student, device, testloader, nn.CrossEntropyLoss(), ema)
             scheduler.step()

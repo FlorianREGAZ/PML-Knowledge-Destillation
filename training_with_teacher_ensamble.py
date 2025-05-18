@@ -4,6 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import timm
 
+import models.ghostnetv3 as ghostnetv3
+from models.resnet import resnet50
+from models.densenet import densenet161
+from models.vgg import vgg13_bn
+from models.inception import inception_v3
 from utils import (
     train,
     evaluate,
@@ -58,10 +63,10 @@ def main():
     student.to(device)
 
     # Initialize teachers
-    teacher_names = ['densenet161', 'vgg13_bn', 'resnet50', 'inception_v3']
+    teacher_inits = [densenet161, vgg13_bn, resnet50, inception_v3]
     teachers = []
-    for name in teacher_names:
-        tm = timm.create_model(name, pretrained=True, num_classes=10)
+    for init in teacher_inits:
+        tm = init(pretrained=True, num_classes=10)
         tm.to(device)
         tm.eval()
         teachers.append(tm)

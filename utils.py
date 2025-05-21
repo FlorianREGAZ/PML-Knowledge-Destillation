@@ -37,7 +37,7 @@ logging.basicConfig(
 # Hyperparameters
 NUM_WORKERS = 6
 BATCH_SIZE = 512
-EPOCHS = 1000
+EPOCHS = 1200
 LR = 0.00125
 WEIGHT_DECAY = 0.05
 EMA_DECAY = 0.9999

@@ -1,4 +1,5 @@
 import logging
+import os
 
 import torch
 import torch.nn as nn
@@ -36,8 +37,21 @@ def main():
     ema = get_ema(model)
     ema.to(device)
 
+    # Resume from checkpoint if exists
+    checkpoint_path = 'default_ghostnetv3_cifar10_checkpoint.pth'
+    start_epoch = 1
     best_acc = 0.0
-    for epoch in range(1, EPOCHS + 1):
+    if os.path.isfile(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        ema.load_state_dict(checkpoint['ema_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        best_acc = checkpoint['best_acc']
+        logging.info(f"Loaded checkpoint '{checkpoint_path}' (epoch {checkpoint['epoch']}, best_acc {best_acc:.2f}%)")
+
+    for epoch in range(start_epoch, EPOCHS + 1):
         train(model, device, trainloader, criterion, optimizer, ema, epoch)
         acc = evaluate(model, device, testloader, criterion, ema)
         scheduler.step()
@@ -46,6 +60,17 @@ def main():
             best_acc = acc
             torch.save(model.state_dict(), 'default_ghostnetv3_cifar10.pth')
             logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
+
+        # Save checkpoint to resume training
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'ema_state_dict': ema.state_dict(),
+            'best_acc': best_acc,
+        }
+        torch.save(checkpoint, checkpoint_path)
 
     logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')
 

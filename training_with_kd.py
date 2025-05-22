@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import timm
+import os
 
 import models.ghostnetv3 as ghostnetv3
 from models.resnet import resnet50
@@ -59,8 +60,21 @@ def main():
     ema = get_ema(student)
     ema.to(device)
 
+    # checkpoint loading
+    checkpoint_path = 'kd_ghostnetv3_cifar10_checkpoint.pth'
+    start_epoch = 1
     best_acc = 0.0
-    for epoch in range(1, EPOCHS + 1):
+    if os.path.isfile(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        student.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        ema.load_state_dict(checkpoint['ema_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        best_acc = checkpoint['best_acc']
+        logging.info(f"Loaded checkpoint '{checkpoint_path}' (epoch {checkpoint['epoch']}, best_acc {best_acc:.2f}%)")
+
+    for epoch in range(start_epoch, EPOCHS + 1):
         train(student, device, trainloader, criterion, optimizer, ema, epoch, teacher_model=teacher)
         acc = evaluate(student, device, testloader, nn.CrossEntropyLoss(), ema)
         scheduler.step()
@@ -69,6 +83,17 @@ def main():
             best_acc = acc
             torch.save(student.state_dict(), 'kd_ghostnetv3_cifar10.pth')
             logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
+
+        # Save checkpoint to resume training
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': student.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'ema_state_dict': ema.state_dict(),
+            'best_acc': best_acc,
+        }
+        torch.save(checkpoint, checkpoint_path)
 
     logging.info(f'Training complete. Best Test Accuracy: {best_acc:.2f}%')
 

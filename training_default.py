@@ -18,6 +18,7 @@ from utils import (
 )
 
 def main():
+    print("Starting default training.")
     torch.manual_seed(0)
 
     device = get_device()

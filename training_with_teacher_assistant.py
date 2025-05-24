@@ -40,6 +40,7 @@ class DistillationLoss(nn.Module):
         return (1 - alpha) * ce_loss + alpha * kd_loss
 
 def main():
+    print("Starting Teaching Assistant training.")
     torch.manual_seed(0)
     device = get_device()
     logging.info(f'Using device: {device}')

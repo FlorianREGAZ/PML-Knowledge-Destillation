@@ -110,7 +110,7 @@ def get_scheduler(optimizer):
     return scheduler
 
 def get_ema(model, decay=EMA_DECAY):
-    ema = ExponentialMovingAverage(model.parameters(), decay=EMA_DECAY)
+    ema = ExponentialMovingAverage(model.parameters(), decay=decay)
     return ema
 
 def get_dataset_loader():

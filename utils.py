@@ -120,7 +120,7 @@ def get_dataset_loader():
         transforms.RandomHorizontalFlip(),
         transforms.RandAugment(),  # random augmentation
         transforms.ToTensor(),
-        transforms.RandomErasing(p=0.25),
+        transforms.RandomErasing(p=0.1),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
     ])
     transform_test = transforms.Compose([

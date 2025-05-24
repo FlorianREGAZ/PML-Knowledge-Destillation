@@ -38,9 +38,11 @@ logging.basicConfig(
 NUM_WORKERS = 6
 BATCH_SIZE = 512
 EPOCHS = 800
-LR = 0.0025
+LR = 0.00125
 WEIGHT_DECAY = 0.05
 EMA_DECAY = 0.9999
+T_0 = 50
+T_mult = 2
 
 
 def train(student_model, device, loader, criterion, optimizer, ema, epoch, teacher_model=None):
@@ -106,7 +108,7 @@ def get_optimizer(model):
     return optimizer
 
 def get_scheduler(optimizer):
-    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=2)
+    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=T_0, T_mult=T_mult)
     return scheduler
 
 def get_ema(model, decay=EMA_DECAY):

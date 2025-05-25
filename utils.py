@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+import math
 
 import torch
 from tqdm import tqdm  # progress bar for training and evaluation loops
@@ -8,8 +9,22 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch_ema import ExponentialMovingAverage
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
+
+def check_gradient_norms(model, threshold=10.0):
+    """Check if gradient norms are reasonable to catch exploding gradients."""
+    total_norm = 0
+    for p in model.parameters():
+        if p.grad is not None:
+            param_norm = p.grad.data.norm(2)
+            total_norm += param_norm.item() ** 2
+    total_norm = total_norm ** (1. / 2)
+    
+    if total_norm > threshold or math.isnan(total_norm) or math.isinf(total_norm):
+        logging.warning(f"Large gradient norm detected: {total_norm}")
+        return False
+    return True
 
 def sync_device(device):
     """Synchronize device operations for CUDA and MPS to avoid hangs."""
@@ -38,9 +53,10 @@ logging.basicConfig(
 NUM_WORKERS = 6
 BATCH_SIZE = 512
 EPOCHS = 800
-LR = 0.0025
+LR = 0.001
 WEIGHT_DECAY = 0.05
 EMA_DECAY = 0.9999
+GRADIENT_CLIP_VALUE = 1.0
 
 
 def train(student_model, device, loader, criterion, optimizer, ema, epoch, teacher_model=None):
@@ -63,6 +79,16 @@ def train(student_model, device, loader, criterion, optimizer, ema, epoch, teach
             loss = criterion(student_outputs, targets)
         
         loss.backward()
+        
+        # Check gradient norms before clipping
+        if not check_gradient_norms(student_model, threshold=10.0):
+            logging.warning(f"Skipping optimizer step due to large gradients at epoch {epoch}")
+            optimizer.zero_grad()
+            continue
+        
+        # Add gradient clipping to prevent exploding gradients
+        torch.nn.utils.clip_grad_norm_(student_model.parameters(), GRADIENT_CLIP_VALUE)
+        
         optimizer.step()
         ema.update()
         # Synchronize after update to flush operations
@@ -106,7 +132,8 @@ def get_optimizer(model):
     return optimizer
 
 def get_scheduler(optimizer):
-    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=2)
+    scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-6)
+    
     return scheduler
 
 def get_ema(model, decay=EMA_DECAY):

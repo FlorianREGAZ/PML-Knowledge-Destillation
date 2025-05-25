@@ -56,7 +56,6 @@ EPOCHS = 800
 LR = 0.001
 WEIGHT_DECAY = 0.05
 EMA_DECAY = 0.9999
-GRADIENT_CLIP_VALUE = 1.0
 
 
 def train(student_model, device, loader, criterion, optimizer, ema, epoch, teacher_model=None):
@@ -132,8 +131,7 @@ def get_optimizer(model):
     return optimizer
 
 def get_scheduler(optimizer):
-    scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-6)
-    
+    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=2)
     return scheduler
 
 def get_ema(model, decay=EMA_DECAY):
@@ -147,7 +145,7 @@ def get_dataset_loader():
         transforms.RandomHorizontalFlip(),
         transforms.RandAugment(),  # random augmentation
         transforms.ToTensor(),
-        transforms.RandomErasing(p=0.1),
+        transforms.RandomErasing(p=0.25),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
     ])
     transform_test = transforms.Compose([

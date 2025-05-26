@@ -10,20 +10,6 @@ import torchvision.datasets as datasets
 from torch_ema import ExponentialMovingAverage
 from torch.utils.data import DataLoader
 
-def check_gradient_norms(model, threshold=10.0):
-    """Check if gradient norms are reasonable to catch exploding gradients."""
-    total_norm = 0
-    for p in model.parameters():
-        if p.grad is not None:
-            param_norm = p.grad.data.norm(2)
-            total_norm += param_norm.item() ** 2
-    total_norm = total_norm ** (1. / 2)
-    
-    if total_norm > threshold or math.isnan(total_norm) or math.isinf(total_norm):
-        logging.warning(f"Large gradient norm detected: {total_norm}")
-        return False
-    return True
-
 def sync_device(device):
     """Synchronize device operations for CUDA and MPS to avoid hangs."""
     if device == 'cuda':
@@ -49,16 +35,15 @@ logging.basicConfig(
 
 # Hyperparameters
 NUM_WORKERS = 6
-BATCH_SIZE = 128
-EPOCHS = 800
+BATCH_SIZE = 256
+EPOCHS = 100
 LR = 0.1
 MOMENTUM = 0.9
 WEIGHT_DECAY = 1e-4
-EMA_DECAY = 0.9999
 GRADIENT_CLIP_VALUE = 1.0
 
 
-def train(student_model, device, loader, criterion, optimizer, ema, epoch, teacher_model=None):
+def train(student_model, device, loader, criterion, optimizer, scheduler, epoch, teacher_model=None):
     student_model.train()
     total_loss, correct, total = 0.0, 0, 0
     for batch_idx, (inputs, targets) in enumerate(tqdm(loader, desc=f"Train Epoch {epoch}", unit="batch")):
@@ -78,18 +63,8 @@ def train(student_model, device, loader, criterion, optimizer, ema, epoch, teach
             loss = criterion(student_outputs, targets)
         
         loss.backward()
-        
-        # Check gradient norms before clipping
-        #if not check_gradient_norms(student_model, threshold=10.0):
-        #    logging.warning(f"Skipping optimizer step due to large gradients at epoch {epoch}")
-        #    optimizer.zero_grad()
-        #    continue
-        
-        # Add gradient clipping to prevent exploding gradients
-        #torch.nn.utils.clip_grad_norm_(student_model.parameters(), GRADIENT_CLIP_VALUE)
-        
         optimizer.step()
-        #ema.update()
+        scheduler.step()
         # Synchronize after update to flush operations
         sync_device(device)
 
@@ -142,10 +117,6 @@ def get_scheduler(optimizer):
         gamma=0.1
     )
     return scheduler
-
-def get_ema(model, decay=EMA_DECAY):
-    ema = ExponentialMovingAverage(model.parameters(), decay=decay)
-    return ema
 
 def get_dataset_loader():
     # Data transforms for CIFAR-10

@@ -8,8 +8,6 @@ from tqdm import tqdm  # progress bar for training and evaluation loops
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch_ema import ExponentialMovingAverage
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 def check_gradient_norms(model, threshold=10.0):
@@ -51,10 +49,11 @@ logging.basicConfig(
 
 # Hyperparameters
 NUM_WORKERS = 6
-BATCH_SIZE = 512
-EPOCHS = 800
-LR = 0.001
-WEIGHT_DECAY = 0.05
+BATCH_SIZE = 128
+EPOCHS = 64_000
+LR = 0.1
+MOMENTUM = 0.9
+WEIGHT_DECAY = 1e-4
 EMA_DECAY = 0.9999
 GRADIENT_CLIP_VALUE = 1.0
 
@@ -81,16 +80,16 @@ def train(student_model, device, loader, criterion, optimizer, ema, epoch, teach
         loss.backward()
         
         # Check gradient norms before clipping
-        if not check_gradient_norms(student_model, threshold=10.0):
-            logging.warning(f"Skipping optimizer step due to large gradients at epoch {epoch}")
-            optimizer.zero_grad()
-            continue
+        #if not check_gradient_norms(student_model, threshold=10.0):
+        #    logging.warning(f"Skipping optimizer step due to large gradients at epoch {epoch}")
+        #    optimizer.zero_grad()
+        #    continue
         
         # Add gradient clipping to prevent exploding gradients
-        torch.nn.utils.clip_grad_norm_(student_model.parameters(), GRADIENT_CLIP_VALUE)
+        #torch.nn.utils.clip_grad_norm_(student_model.parameters(), GRADIENT_CLIP_VALUE)
         
         optimizer.step()
-        ema.update()
+        #ema.update()
         # Synchronize after update to flush operations
         sync_device(device)
 
@@ -105,8 +104,8 @@ def train(student_model, device, loader, criterion, optimizer, ema, epoch, teach
     logging.info(f'Epoch {epoch} training completed')
 
 def evaluate(model, device, loader, criterion, ema):
-    ema.store()
-    ema.copy_to()
+    #ema.store()
+    #ema.copy_to()
     model.eval()
 
     total_loss, correct, total = 0.0, 0, 0
@@ -124,15 +123,24 @@ def evaluate(model, device, loader, criterion, ema):
     # Ensure all evaluation ops are completed
     sync_device(device)
     
-    ema.restore()
+   #ema.restore()
     return acc
 
 def get_optimizer(model):
-    optimizer = AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+    optimizer = torch.optim.SGD(
+        model.parameters(), 
+        lr=LR,
+        momentum=MOMENTUM,
+        weight_decay=WEIGHT_DECAY
+    )
     return optimizer
 
 def get_scheduler(optimizer):
-    scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-6)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer,
+        milestones=[32_000, 48_000],
+        gamma=0.1
+    )
     return scheduler
 
 def get_ema(model, decay=EMA_DECAY):
@@ -142,11 +150,9 @@ def get_ema(model, decay=EMA_DECAY):
 def get_dataset_loader():
     # Data transforms for CIFAR-10
     transform_train = transforms.Compose([
-        transforms.RandomResizedCrop(32),
+        transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
-        transforms.RandAugment(),  # random augmentation
         transforms.ToTensor(),
-        transforms.RandomErasing(p=0.25),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
     ])
     transform_test = transforms.Compose([

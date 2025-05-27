@@ -14,6 +14,7 @@ from utils import (
     get_dataset_loader,
     get_optimizer,
     get_scheduler,
+    init_weights_kaiming,
     EPOCHS
 )
 
@@ -47,10 +48,13 @@ def main():
     trainloader, testloader = get_dataset_loader()
 
     # Student model: GhostNetV3
-    student = timm.create_model('ghostnetv3', width=1.0, num_classes=10).to(device)
+    student = timm.create_model('ghostnetv3', width=1.0, num_classes=10)
+    init_weights_kaiming(student)
+    student.to(device)
 
     # Teacher model: ResNet-50
-    teacher = vgg13_bn(pretrained=True, device=device).to(device)
+    teacher = vgg13_bn(pretrained=True, device=device)
+    teacher.to(device)
     teacher.eval()
 
     # Loss, optimizer, scheduler

@@ -16,7 +16,6 @@ from utils import (
     get_dataset_loader,
     get_optimizer,
     get_scheduler,
-    get_ema,
     EPOCHS
 )
 
@@ -78,16 +77,14 @@ def main():
     # Setup training utilities
     criterion = DistillationLoss(temperature=1.0, alpha=0.5)
     optimizer = get_optimizer(student)
-    scheduler = get_scheduler(optimizer)
-    ema = get_ema(student)
-    ema.to(device)
+    scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     best_acc = 0.0
     ckpt_path = 'ensemble_ghostnetv3.pth'
 
     for epoch in range(1, EPOCHS + 1):
-        train(student, device, trainloader, criterion, optimizer, ema, epoch, teacher_model=ensemble_teacher)
-        acc = evaluate(student, device, testloader, nn.CrossEntropyLoss(), ema)
+        train(student, device, trainloader, criterion, optimizer, scheduler, epoch, teacher_model=ensemble_teacher)
+        acc = evaluate(student, device, testloader, nn.CrossEntropyLoss())
         scheduler.step()
         if acc > best_acc:
             best_acc = acc

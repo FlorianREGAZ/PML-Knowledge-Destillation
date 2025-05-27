@@ -52,7 +52,7 @@ class EnsembleTeacher(nn.Module):
 
 # Replace main with ensemble distillation
 def main():
-    print("Starting Teaching Ensamble training.")
+    print("Starting Teaching Ensemble training.")
     torch.manual_seed(0)
     device = get_device()
     logging.info(f'Using device: {device}')

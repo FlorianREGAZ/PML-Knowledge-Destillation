@@ -53,16 +53,16 @@ def main():
         student = init_student()
         init_weights_kaiming(student)
         student.to(device)
-        teacher = init_teacher()
-        teacher.to(device)
 
         # Load teacher from previous stage if available
+        teacher = init_teacher()
         if stage_idx > 0:
             prev_student_name = stages[stage_idx - 1][0]
             prev_checkpoint = f"assistant_{prev_student_name}.pth"
             if os.path.isfile(prev_checkpoint):
                 teacher.load_state_dict(torch.load(prev_checkpoint, map_location=device))
                 logging.info(f"Loaded teacher {teacher_name} from {prev_checkpoint}")
+        teacher.to(device)
         teacher.eval()
 
         logging.info(f"Stage {stage_idx}: {teacher_name} -> {student_name}")

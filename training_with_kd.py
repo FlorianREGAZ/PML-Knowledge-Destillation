@@ -14,7 +14,6 @@ from utils import (
     get_dataset_loader,
     get_optimizer,
     get_scheduler,
-    get_ema,
     EPOCHS
 )
 
@@ -52,14 +51,12 @@ def main():
 
     # Teacher model: ResNet-50
     teacher = resnet50(pretrained=True, device=device).to(device)
-    teacher.eval()  # no gradients for teacher
+    teacher.eval()
 
     # Loss, optimizer, scheduler
     criterion = DistillationLoss(temperature=1.0, alpha=0.5)
     optimizer = get_optimizer(student)
-    scheduler = get_scheduler(optimizer)
-    ema = get_ema(student)
-    ema.to(device)
+    scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     # checkpoint loading
     checkpoint_path = 'kd_ghostnetv3_cifar10_checkpoint.pth'
@@ -70,14 +67,13 @@ def main():
         student.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        ema.load_state_dict(checkpoint['ema_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
         best_acc = checkpoint['best_acc']
         logging.info(f"Loaded checkpoint '{checkpoint_path}' (epoch {checkpoint['epoch']}, best_acc {best_acc:.2f}%)")
 
     for epoch in range(start_epoch, EPOCHS + 1):
-        train(student, device, trainloader, criterion, optimizer, ema, epoch, teacher_model=teacher)
-        acc = evaluate(student, device, testloader, nn.CrossEntropyLoss(), ema)
+        train(student, device, trainloader, criterion, optimizer, scheduler, epoch, teacher_model=teacher)
+        acc = evaluate(student, device, testloader, nn.CrossEntropyLoss())
         scheduler.step()
 
         if acc > best_acc:
@@ -91,7 +87,6 @@ def main():
             'model_state_dict': student.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'scheduler_state_dict': scheduler.state_dict(),
-            'ema_state_dict': ema.state_dict(),
             'best_acc': best_acc,
         }
         torch.save(checkpoint, checkpoint_path)

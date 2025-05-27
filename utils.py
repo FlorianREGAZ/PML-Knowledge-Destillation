@@ -88,7 +88,7 @@ def train(student_model, device, loader, criterion, optimizer, scheduler, epoch,
     # End of epoch logging
     logging.info(f'Epoch {epoch} training completed')
 
-def evaluate(model, device, loader, criterion, ema):
+def evaluate(model, device, loader, criterion):
     model.eval()
 
     total_loss, correct, total = 0.0, 0, 0

@@ -15,6 +15,7 @@ from utils import (
     get_dataset_loader,
     get_optimizer,
     get_scheduler,
+    init_weights_kaiming,
     EPOCHS
 )
 
@@ -50,6 +51,7 @@ def main():
         
         # Initialize student and teacher
         student = init_student()
+        init_weights_kaiming(student)
         student.to(device)
         teacher = init_teacher()
         teacher.to(device)

@@ -1,14 +1,25 @@
 import logging
 import os
 from datetime import datetime
-import math
 
 import torch
-from tqdm import tqdm  # progress bar for training and evaluation loops
+import torch.nn as nn
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-from torch_ema import ExponentialMovingAverage
+from tqdm import tqdm
+from scheduler.WarmupCosineLR import WarmupCosineLR
 from torch.utils.data import DataLoader
+
+def init_weights_kaiming(model):
+    for m in model.modules():
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+        elif isinstance(m, nn.Linear):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
 
 def sync_device(device):
     """Synchronize device operations for CUDA and MPS to avoid hangs."""
@@ -37,9 +48,9 @@ logging.basicConfig(
 NUM_WORKERS = 6
 BATCH_SIZE = 256
 EPOCHS = 200
-LR = 0.1
+LR = 0.01
 MOMENTUM = 0.9
-WEIGHT_DECAY = 1e-4
+WEIGHT_DECAY = 0.01
 GRADIENT_CLIP_VALUE = 1.0
 
 
@@ -47,8 +58,6 @@ def train(student_model, device, loader, criterion, optimizer, scheduler, epoch,
     student_model.train()
     total_loss, correct, total = 0.0, 0, 0
     for batch_idx, (inputs, targets) in enumerate(tqdm(loader, desc=f"Train Epoch {epoch}", unit="batch")):
-        # log progress at every batch
-        # logging.debug(f"Processing batch {batch_idx+1}/{len(loader)} for epoch {epoch}")
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
 
@@ -75,12 +84,11 @@ def train(student_model, device, loader, criterion, optimizer, scheduler, epoch,
         # Log more frequently to monitor progress
         if batch_idx % 100 == 0:
             logging.info(f'Epoch {epoch} | Step {batch_idx+1}/{len(loader)} | Loss: {total_loss/(batch_idx+1):.4f} | Acc: {100.*correct/total:.2f}%')
+    
     # End of epoch logging
     logging.info(f'Epoch {epoch} training completed')
 
 def evaluate(model, device, loader, criterion, ema):
-    #ema.store()
-    #ema.copy_to()
     model.eval()
 
     total_loss, correct, total = 0.0, 0, 0
@@ -98,23 +106,22 @@ def evaluate(model, device, loader, criterion, ema):
     # Ensure all evaluation ops are completed
     sync_device(device)
     
-   #ema.restore()
     return acc
 
 def get_optimizer(model):
     optimizer = torch.optim.SGD(
-        model.parameters(), 
+        model.parameters(),
         lr=LR,
+        weight_decay=WEIGHT_DECAY,
         momentum=MOMENTUM,
-        weight_decay=WEIGHT_DECAY
+        nesterov=True,
     )
     return optimizer
 
-def get_scheduler(optimizer):
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer,
-        milestones=[32_000, 48_000],
-        gamma=0.1
+def get_scheduler(optimizer, training_length):
+    total_steps = EPOCHS * training_length
+    scheduler = WarmupCosineLR(
+        optimizer, warmup_epochs=total_steps * 0.3, max_epochs=total_steps
     )
     return scheduler
 

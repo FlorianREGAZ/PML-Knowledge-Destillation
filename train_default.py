@@ -6,25 +6,16 @@ import torch.nn as nn
 import timm
 
 import models.ghostnetv3 as ghostnetv3
-from scheduler.WarmupCosineLR import WarmupCosineLR
 from utils import (
     train,
     evaluate,
     get_device,
     get_dataset_loader,
+    get_scheduler,
+    get_optimizer,
+    init_weights_kaiming,
     EPOCHS
 )
-
-def init_weights_kaiming(model):
-    for m in model.modules():
-        if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.Linear):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
 
 def main():
     print("Starting default training.")
@@ -42,20 +33,11 @@ def main():
 
     # Loss, optimizer, scheduler
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(
-        model.parameters(),
-        lr=0.01,
-        weight_decay=0.01,
-        momentum=0.9,
-        nesterov=True,
-    )
-    total_steps = EPOCHS * len(trainloader)
-    scheduler = WarmupCosineLR(
-        optimizer, warmup_epochs=total_steps * 0.3, max_epochs=total_steps
-    )
+    optimizer = get_optimizer(model)
+    scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     # Resume from checkpoint if exists
-    checkpoint_path = 'default_v2_ghostnetv3_cifar10_checkpoint.pth'
+    checkpoint_path = 'default_ghostnetv3_cifar10_checkpoint.pth'
     start_epoch = 1
     best_acc = 0.0
     if os.path.isfile(checkpoint_path):

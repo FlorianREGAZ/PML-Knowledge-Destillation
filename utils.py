@@ -7,7 +7,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from tqdm import tqdm
-from scheduler.WarmupCosineLR import WarmupCosineLR
+from scheduler.warumup_cosine_lr import WarmupCosineLR
 from torch.utils.data import DataLoader
 
 def init_weights_kaiming(model):

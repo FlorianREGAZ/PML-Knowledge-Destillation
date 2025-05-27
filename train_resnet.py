@@ -6,7 +6,7 @@ import torch.nn as nn
 import timm
 
 from models.resnet import resnet18
-from scheduler.WarmupCosineLR import WarmupCosineLR
+from scheduler.warumup_cosine_lr import WarmupCosineLR
 from utils import (
     train,
     evaluate,

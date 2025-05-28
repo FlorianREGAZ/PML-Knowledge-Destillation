@@ -51,7 +51,7 @@ def main():
 
     for epoch in range(start_epoch, EPOCHS + 1):
         train(model, device, trainloader, criterion, optimizer, scheduler, epoch)
-        acc = evaluate(model, device, testloader, criterion, None)
+        acc = evaluate(model, device, testloader, criterion)
 
         if acc > best_acc:
             best_acc = acc

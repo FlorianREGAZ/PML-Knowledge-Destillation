@@ -63,7 +63,7 @@ def main():
     scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     # checkpoint loading
-    checkpoint_path = 'kd_ghostnetv3_cifar10_checkpoint.pth'
+    checkpoint_path = 'kd_vgg13_ghostnetv3_cifar10_checkpoint.pth'
     start_epoch = 1
     best_acc = 0.0
     if os.path.isfile(checkpoint_path):
@@ -82,7 +82,7 @@ def main():
 
         if acc > best_acc:
             best_acc = acc
-            torch.save(student.state_dict(), 'kd_ghostnetv3_cifar10.pth')
+            torch.save(student.state_dict(), 'kd_vgg13_ghostnetv3_cifar10.pth')
             logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
         # Save checkpoint to resume training

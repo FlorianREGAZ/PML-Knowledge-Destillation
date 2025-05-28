@@ -18,7 +18,7 @@ from utils import (
 )
 
 def main():
-    print("Starting default training.")
+    print("Starting default small training.")
     torch.manual_seed(0)
 
     device = get_device()
@@ -37,7 +37,7 @@ def main():
     scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     # Resume from checkpoint if exists
-    checkpoint_path = 'default_ghostnetv3_cifar10_checkpoint.pth'
+    checkpoint_path = 'default_ghostnetv3_small_cifar10_checkpoint.pth'
     start_epoch = 1
     best_acc = 0.0
     if os.path.isfile(checkpoint_path):
@@ -55,7 +55,7 @@ def main():
 
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), 'default_ghostnetv3_cifar10.pth')
+            torch.save(model.state_dict(), 'default_ghostnetv3_small_cifar10.pth')
             logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
         # Save checkpoint to resume training

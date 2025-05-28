@@ -27,7 +27,9 @@ def main():
     trainloader, testloader = get_dataset_loader()
 
     # Model: GhostNetV3
-    model = timm.create_model('ghostnetv3_small', width=1.3, num_classes=10)
+    width = 1.3
+    logging.info(f'Using GhostNetV3 with width {width}')
+    model = timm.create_model('ghostnetv3_small', width=width, num_classes=10)
     init_weights_kaiming(model)
     model.to(device)
 

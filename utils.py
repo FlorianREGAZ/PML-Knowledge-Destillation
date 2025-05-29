@@ -51,7 +51,6 @@ EPOCHS = 200
 LR = 0.01
 MOMENTUM = 0.9
 WEIGHT_DECAY = 0.01
-GRADIENT_CLIP_VALUE = 1.0
 
 
 def train(student_model, device, loader, criterion, optimizer, scheduler, epoch, teacher_model=None):

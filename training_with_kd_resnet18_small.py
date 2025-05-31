@@ -6,7 +6,7 @@ import timm
 import os
 
 import models.ghostnetv3_small as ghostnetv3_small
-from models.vgg import vgg13_bn
+from models.resnet import resnet18
 from utils import (
     train,
     evaluate,
@@ -48,15 +48,14 @@ def main():
     trainloader, testloader = get_dataset_loader()
 
     # Student model: GhostNetV3
-    width = 2.8
+    width = 1.0
     logging.info(f'Using GhostNetV3 with width {width}')
     student = timm.create_model('ghostnetv3_small', width=width, num_classes=10)
     init_weights_kaiming(student)
     student.to(device)
 
-    # Teacher model: VGG13-BN
-    teacher = vgg13_bn(pretrained=True, device=device)
-    teacher.to(device)
+    # Teacher model: ResNet-18
+    teacher = resnet18(pretrained=True, device=device).to(device)
     teacher.eval()
 
     # Loss, optimizer, scheduler
@@ -65,7 +64,7 @@ def main():
     scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     # checkpoint loading
-    checkpoint_path = 'kd_vgg13_ghostnetv3_cifar10_checkpoint.pth'
+    checkpoint_path = 'kd_ghostnetv3_cifar10_checkpoint.pth'
     start_epoch = 1
     best_acc = 0.0
     if os.path.isfile(checkpoint_path):
@@ -84,7 +83,7 @@ def main():
 
         if acc > best_acc:
             best_acc = acc
-            torch.save(student.state_dict(), 'kd_vgg13_ghostnetv3_cifar10.pth')
+            torch.save(student.state_dict(), 'kd_ghostnetv3_cifar10.pth')
             logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
         # Save checkpoint to resume training

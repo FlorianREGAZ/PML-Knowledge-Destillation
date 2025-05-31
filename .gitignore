@@ -5,7 +5,6 @@ state_dicts
 state_dicts/*
 logs/*
 logs
-test.py
 pretrained/*
 lightning_logs/
 

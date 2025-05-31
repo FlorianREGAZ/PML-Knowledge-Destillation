@@ -3,10 +3,8 @@ import os
 
 import torch
 import torch.nn as nn
-import timm
 
 from models.resnet import resnet18
-from scheduler.warumup_cosine_lr import WarmupCosineLR
 from utils import (
     train,
     evaluate,
@@ -32,17 +30,9 @@ def main():
 
     # Loss, optimizer, scheduler
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(
-        model.parameters(),
-        lr=0.01,
-        weight_decay=0.01,
-        momentum=0.9,
-        nesterov=True,
-    )
+    optimizer = get_optimizer(model)
     total_steps = EPOCHS * len(trainloader)
-    scheduler = WarmupCosineLR(
-        optimizer, warmup_epochs=total_steps * 0.3, max_epochs=total_steps
-    )
+    scheduler = get_scheduler(optimizer, training_length=total_steps)
 
     # Resume from checkpoint if exists
     checkpoint_path = 'default_resnet18_cifar10_checkpoint.pth'

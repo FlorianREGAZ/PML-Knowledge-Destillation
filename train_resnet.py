@@ -31,8 +31,7 @@ def main():
     # Loss, optimizer, scheduler
     criterion = nn.CrossEntropyLoss()
     optimizer = get_optimizer(model)
-    total_steps = EPOCHS * len(trainloader)
-    scheduler = get_scheduler(optimizer, training_length=total_steps)
+    scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     # Resume from checkpoint if exists
     checkpoint_path = 'default_resnet18_cifar10_checkpoint.pth'
@@ -49,7 +48,7 @@ def main():
 
     for epoch in range(start_epoch, EPOCHS + 1):
         train(model, device, trainloader, criterion, optimizer, scheduler, epoch)
-        acc = evaluate(model, device, testloader, criterion, None)
+        acc = evaluate(model, device, testloader, criterion)
 
         if acc > best_acc:
             best_acc = acc

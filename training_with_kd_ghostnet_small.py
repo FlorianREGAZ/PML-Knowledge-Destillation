@@ -6,7 +6,6 @@ import timm
 import os
 
 import models.ghostnetv3_small as ghostnetv3_small
-from models.resnet import resnet18
 from utils import (
     train,
     evaluate,
@@ -49,7 +48,7 @@ def main():
 
     # Student model: GhostNetV3
     student_width = 1.0
-    teacher_width = 1.0
+    teacher_width = 2.8
     logging.info(f'Using GhostNetV3 with student width={student_width} & teacher width={teacher_width}')
     student = timm.create_model('ghostnetv3_small', width=student_width, num_classes=10)
     init_weights_kaiming(student)

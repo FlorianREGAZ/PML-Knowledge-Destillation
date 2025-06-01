@@ -28,6 +28,7 @@ def main():
     checkpoint = torch.load("default_ghostnetv3_small_cifar10-width-28.pth", map_location=device)
     model.load_state_dict(checkpoint)
     model.eval()
+    model.to(device)
 
     print(sum(p.numel() for p in model.parameters()))
 

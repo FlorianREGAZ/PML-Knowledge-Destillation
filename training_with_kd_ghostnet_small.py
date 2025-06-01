@@ -59,6 +59,7 @@ def main():
     checkpoint = torch.load("default_ghostnetv3_small_cifar10-width-28.pth", map_location=device)
     teacher.load_state_dict(checkpoint)
     teacher.eval()
+    teacher.to(device)
 
     # Loss, optimizer, scheduler
     criterion = DistillationLoss(temperature=1.0, alpha=0.5)

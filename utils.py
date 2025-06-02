@@ -68,10 +68,10 @@ def train(student_model, device, loader, criterion, optimizer, scheduler, epoch,
             # Fetch teacher inputs from separate loader if available
             if teacher_loader is not None:
                 try:
-                    t_inputs, _ = next(teacher_iter)
+                    t_inputs, t_targets = next(teacher_iter)
                 except StopIteration:
                     teacher_iter = iter(teacher_loader)
-                    t_inputs, _ = next(teacher_iter)
+                    t_inputs, t_targets = next(teacher_iter)
                 t_inputs = t_inputs.to(device)
             else:
                 t_inputs = inputs
@@ -83,7 +83,7 @@ def train(student_model, device, loader, criterion, optimizer, scheduler, epoch,
             loss = criterion(student_outputs, teacher_outputs, targets)
         else:
             loss = criterion(student_outputs, targets)
-        
+
         loss.backward()
         optimizer.step()
         scheduler.step()
@@ -136,7 +136,7 @@ def get_scheduler(optimizer, training_length):
     )
     return scheduler
 
-def get_dataset_loader(resize=None, generator=None):
+def get_dataset_loader(resize=None):
     # Data transforms for CIFAR-10
     if resize is not None:
         transform_train = transforms.Compose([
@@ -175,11 +175,10 @@ def get_dataset_loader(resize=None, generator=None):
     trainloader = DataLoader(
         trainset,
         batch_size=BATCH_SIZE,
-        shuffle=True,
+        shuffle=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        persistent_workers=persistent_workers,
-        generator=generator
+        persistent_workers=persistent_workers
     )
     testloader = DataLoader(
         testset,
@@ -187,8 +186,7 @@ def get_dataset_loader(resize=None, generator=None):
         shuffle=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        persistent_workers=persistent_workers,
-        generator=generator
+        persistent_workers=persistent_workers
     )
 
     return trainloader, testloader

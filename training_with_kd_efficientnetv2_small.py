@@ -43,13 +43,11 @@ class DistillationLoss(nn.Module):
 def main():
     print("Starting KD training.")
     torch.manual_seed(0)
-    g = torch.Generator()
-    g.manual_seed(0)
 
     device = get_device()
     logging.info(f'Using device: {device}')
-    trainloader, testloader = get_dataset_loader(generator=g)
-    trainloader_resized, _ = get_dataset_loader(resize=(224, 224), generator=g)
+    trainloader, testloader = get_dataset_loader()
+    trainloader_resized, _ = get_dataset_loader(resize=(224, 224))
 
     # Student model: GhostNetV3
     width = 2.8

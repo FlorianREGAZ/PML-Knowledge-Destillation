@@ -6,7 +6,7 @@ import timm
 import os
 
 import models.ghostnetv3_small as ghostnetv3_small
-from train_efficientnetv2 import BaseVisionSystem
+from train_efficientnetv2 import BaseVisionSystem, config
 from utils import (
     train,
     evaluate,
@@ -40,21 +40,6 @@ class DistillationLoss(nn.Module):
 
         return (1 - alpha) * ce_loss + alpha * kd_loss
 
-# Model class for EfficientNetV2 teacher
-class EfficientNetV2Teacher(nn.Module):
-    def __init__(self, num_classes=10):
-        super().__init__()
-        backbone_init = {
-            'model': 'efficientnet_v2_s_in21k',
-            'nclass': 0, # do not change this
-            'pretrained': True,
-        }
-        self.backbone = torch.hub.load('hankyul2/EfficientNetV2-pytorch', **backbone_init)
-        self.fc = nn.Linear(self.backbone.out_channels, num_classes)
-
-    def forward(self, x):
-        return self.fc(self.backbone(x))
-
 def main():
     print("Starting KD training.")
     torch.manual_seed(0)
@@ -70,8 +55,8 @@ def main():
     student.to(device)
 
     # Teacher model: EfficientNetV2
-    teacher = EfficientNetV2Teacher(num_classes=10)
-    teacher.load_state_dict(torch.load("lightning_logs/version_0/checkpoints/epoch=99-step=140700.ckpt", map_location=device))
+    teacher = BaseVisionSystem(**config['model'])
+    teacher.load_from_checkpoint("lightning_logs/version_0/checkpoints/epoch=99-step=140700.ckpt")
     teacher.eval()
     teacher.to(device)
 

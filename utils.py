@@ -55,14 +55,28 @@ WEIGHT_DECAY = 0.01
 
 def train(student_model, device, loader, criterion, optimizer, scheduler, epoch, teacher_model=None, teacher_loader=None):
     student_model.train()
+    # Initialize teacher loader iterator if a separate loader is provided
+    if teacher_model is not None and teacher_loader is not None:
+        teacher_iter = iter(teacher_loader)
+
     total_loss, correct, total = 0.0, 0, 0
     for batch_idx, (inputs, targets) in enumerate(tqdm(loader, desc=f"Train Epoch {epoch}", unit="batch")):
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
 
         if teacher_model is not None:
+            # Fetch teacher inputs from separate loader if available
+            if teacher_loader is not None:
+                try:
+                    t_inputs, _ = next(teacher_iter)
+                except StopIteration:
+                    teacher_iter = iter(teacher_loader)
+                    t_inputs, _ = next(teacher_iter)
+                t_inputs = t_inputs.to(device)
+            else:
+                t_inputs = inputs
             with torch.no_grad():
-                teacher_outputs = teacher_model(inputs)
+                teacher_outputs = teacher_model(t_inputs)
 
         student_outputs = student_model(inputs)
         if teacher_model is not None:
@@ -73,19 +87,17 @@ def train(student_model, device, loader, criterion, optimizer, scheduler, epoch,
         loss.backward()
         optimizer.step()
         scheduler.step()
-        # Synchronize after update to flush operations
         sync_device(device)
 
         total_loss += loss.item()
         _, predicted = student_outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
-        # Log more frequently to monitor progress
         if batch_idx % 100 == 0:
             logging.info(f'Epoch {epoch} | Step {batch_idx+1}/{len(loader)} | Loss: {total_loss/(batch_idx+1):.4f} | Acc: {100.*correct/total:.2f}%')
     
     # End of epoch logging
-    logging.info(f'Epoch {epoch} training completed')
+    logging.info(f"Epoch {epoch} training completed")
 
 def evaluate(model, device, loader, criterion):
     model.eval()
@@ -124,7 +136,7 @@ def get_scheduler(optimizer, training_length):
     )
     return scheduler
 
-def get_dataset_loader(resize=None):
+def get_dataset_loader(resize=None, generator=None):
     # Data transforms for CIFAR-10
     if resize is not None:
         transform_train = transforms.Compose([
@@ -160,8 +172,24 @@ def get_dataset_loader(resize=None):
     # Datasets and loaders
     trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=persistent_workers)
-    testloader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory, persistent_workers=persistent_workers)
+    trainloader = DataLoader(
+        trainset,
+        batch_size=BATCH_SIZE,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers,
+        generator=generator
+    )
+    testloader = DataLoader(
+        testset,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers,
+        generator=generator
+    )
 
     return trainloader, testloader
 

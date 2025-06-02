@@ -43,6 +43,9 @@ class DistillationLoss(nn.Module):
 def main():
     print("Starting KD training.")
     torch.manual_seed(0)
+    g = torch.Generator()
+    g.manual_seed(0)
+
     device = get_device()
     logging.info(f'Using device: {device}')
     trainloader, _ = get_dataset_loader()

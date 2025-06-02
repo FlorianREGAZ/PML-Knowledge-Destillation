@@ -55,6 +55,9 @@ def main():
     student.to(device)
 
     # Teacher model: EfficientNetV2
+    config['model']['num_classes'] = 10
+    config['model']['num_step'] = 150000
+    config['model']['max_epochs'] = 100
     teacher = BaseVisionSystem(**config['model'])
     teacher.load_from_checkpoint("lightning_logs/version_0/checkpoints/epoch=99-step=140700.ckpt")
     teacher.eval()

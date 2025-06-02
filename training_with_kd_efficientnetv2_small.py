@@ -5,6 +5,8 @@ import torch.nn.functional as F
 import timm
 import os
 
+import models.ghostnetv3_small as ghostnetv3_small
+from train_efficientnetv2 import BaseVisionSystem
 from utils import (
     train,
     evaluate,
@@ -15,8 +17,6 @@ from utils import (
     init_weights_kaiming,
     EPOCHS
 )
-
-
 
 class DistillationLoss(nn.Module):
     def __init__(self, temperature=1.0, alpha=0.5):
@@ -44,7 +44,12 @@ class DistillationLoss(nn.Module):
 class EfficientNetV2Teacher(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
-        self.backbone = torch.hub.load('hankyul2/EfficientNetV2-pytorch', 'efficientnet_v2_s_in21k')
+        backbone_init = {
+            'model': 'efficientnet_v2_s_in21k',
+            'nclass': 0, # do not change this
+            'pretrained': True,
+        }
+        self.backbone = torch.hub.load('hankyul2/EfficientNetV2-pytorch', **backbone_init)
         self.fc = nn.Linear(self.backbone.out_channels, num_classes)
 
     def forward(self, x):

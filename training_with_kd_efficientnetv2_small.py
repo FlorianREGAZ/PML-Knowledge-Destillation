@@ -48,8 +48,8 @@ def main():
 
     device = get_device()
     logging.info(f'Using device: {device}')
-    trainloader, _ = get_dataset_loader()
-    trainloader_resized, testloader = get_dataset_loader(resize=(224, 224))
+    trainloader, testloader = get_dataset_loader(generator=g)
+    trainloader_resized, _ = get_dataset_loader(resize=(224, 224), generator=g)
 
     # Student model: GhostNetV3
     width = 2.8
@@ -62,7 +62,6 @@ def main():
     config['model']['num_classes'] = 10
     config['model']['num_step'] = 150000
     config['model']['max_epochs'] = 100
-    #teacher = BaseVisionSystem(**config['model'])
     teacher = BaseVisionSystem.load_from_checkpoint("lightning_logs/version_0/checkpoints/epoch=99-step=140700.ckpt", **config['model'])
     teacher.eval()
     teacher.to(device)
@@ -86,7 +85,7 @@ def main():
         logging.info(f"Loaded checkpoint '{checkpoint_path}' (epoch {checkpoint['epoch']}, best_acc {best_acc:.2f}%)")
 
     for epoch in range(start_epoch, EPOCHS + 1):
-        train(student, device, trainloader, criterion, optimizer, scheduler, epoch, teacher_model=teacher)
+        train(student, device, trainloader, criterion, optimizer, scheduler, epoch, teacher_model=teacher, teacher_loader=trainloader_resized)
         acc = evaluate(student, device, testloader, nn.CrossEntropyLoss())
         scheduler.step()
 

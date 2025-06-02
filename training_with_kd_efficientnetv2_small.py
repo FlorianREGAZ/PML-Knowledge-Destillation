@@ -45,7 +45,8 @@ def main():
     torch.manual_seed(0)
     device = get_device()
     logging.info(f'Using device: {device}')
-    trainloader, testloader = get_dataset_loader()
+    trainloader, _ = get_dataset_loader()
+    trainloader_resized, testloader = get_dataset_loader(resize=(224, 224))
 
     # Student model: GhostNetV3
     width = 2.8
@@ -58,8 +59,8 @@ def main():
     config['model']['num_classes'] = 10
     config['model']['num_step'] = 150000
     config['model']['max_epochs'] = 100
-    teacher = BaseVisionSystem(**config['model'])
-    teacher.load_from_checkpoint("lightning_logs/version_0/checkpoints/epoch=99-step=140700.ckpt")
+    #teacher = BaseVisionSystem(**config['model'])
+    teacher = BaseVisionSystem.load_from_checkpoint("lightning_logs/version_0/checkpoints/epoch=99-step=140700.ckpt", **config['model'])
     teacher.eval()
     teacher.to(device)
 
@@ -69,7 +70,7 @@ def main():
     scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 
     # checkpoint loading
-    checkpoint_path = 'kd_ghostnetv3-28_ghostnetv3_cifar10_checkpoint.pth'
+    checkpoint_path = 'kd_efficientnetv2_ghostnetv3_cifar10_checkpoint.pth'
     start_epoch = 1
     best_acc = 0.0
     if os.path.isfile(checkpoint_path):
@@ -88,7 +89,7 @@ def main():
 
         if acc > best_acc:
             best_acc = acc
-            torch.save(student.state_dict(), 'kd_ghostnetv3-28_ghostnetv3_cifar10.pth')
+            torch.save(student.state_dict(), 'kd_efficientnetv2_ghostnetv3_cifar10.pth')
             logging.info(f'New best accuracy: {best_acc:.2f}%, model saved.')
 
         # Save checkpoint to resume training

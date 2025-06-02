@@ -53,7 +53,7 @@ MOMENTUM = 0.9
 WEIGHT_DECAY = 0.01
 
 
-def train(student_model, device, loader, criterion, optimizer, scheduler, epoch, teacher_model=None):
+def train(student_model, device, loader, criterion, optimizer, scheduler, epoch, teacher_model=None, teacher_loader=None):
     student_model.train()
     total_loss, correct, total = 0.0, 0, 0
     for batch_idx, (inputs, targets) in enumerate(tqdm(loader, desc=f"Train Epoch {epoch}", unit="batch")):
@@ -124,18 +124,32 @@ def get_scheduler(optimizer, training_length):
     )
     return scheduler
 
-def get_dataset_loader():
+def get_dataset_loader(resize=None):
     # Data transforms for CIFAR-10
-    transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
-    ])
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
-    ])
+    if resize is not None:
+        transform_train = transforms.Compose([
+            transforms.Resize(resize),
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
+        ])
+        transform_test = transforms.Compose([
+            transforms.Resize(resize),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
+        ])
+    else:
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616)),
+        ])
 
     # Dynamically set num_workers and pin_memory based on device
     device = get_device()

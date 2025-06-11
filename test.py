@@ -24,9 +24,9 @@ def main():
     _, testloader = get_dataset_loader()
 
     #model = resnet18(pretrained=True, device=device).to(device)
-    model = timm.create_model('ghostnetv3_small', width=2.8, num_classes=10)
-    checkpoint = torch.load("default_ghostnetv3_small_cifar10-width-28.pth", map_location=device)
-    model.load_state_dict(checkpoint)
+    model = resnet18(pretrained=True, device=device)
+    teacher_weights = torch.load("assistant_resnet18.pth", map_location=device)
+    model.load_state_dict(teacher_weights)
     model.eval()
     model.to(device)
 

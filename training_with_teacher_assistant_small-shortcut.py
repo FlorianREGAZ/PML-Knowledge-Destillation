@@ -55,9 +55,10 @@ def main():
     student.to(device)
 
     # Teacher model: ResNet-18
-    teacher = resnet18(pretrained=True, device=device).to(device)
+    teacher = resnet18(pretrained=True, device=device)
     teacher_weights = torch.load("assistant_resnet18.pth", map_location=device)
-    student.load_state_dict(teacher_weights)
+    teacher.load_state_dict(teacher_weights)
+    teacher.to(device)
     teacher.eval()
 
     # Loss, optimizer, scheduler

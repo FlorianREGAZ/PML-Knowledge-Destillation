@@ -26,11 +26,13 @@ def main():
     logging.info(f'Using device: {device}')
     trainloader, testloader = get_dataset_loader()
 
+    width = 1.0
+    logging.info(f'Using GhostNetV3 with width {width}')
     # Define distillation stages: (student_name, init_student_fn, teacher_name, init_teacher_fn)
     stages = [
         ('resnet34', lambda: resnet34(pretrained=True, device=device), 'resnet50', lambda: resnet50(pretrained=True, device=device)),
         ('resnet18', lambda: resnet18(pretrained=True, device=device), 'resnet34', lambda: resnet34(pretrained=True, device=device)),
-        ('ghostnetv3_small', lambda: timm.create_model('ghostnetv3_small', width=1.0, num_classes=10), 'resnet18', lambda: resnet18(pretrained=True, device=device)),
+        ('ghostnetv3_small', lambda: timm.create_model('ghostnetv3_small', width=width, num_classes=10), 'resnet18', lambda: resnet18(pretrained=True, device=device)),
     ]
     
     # Master checkpoint for overall progress

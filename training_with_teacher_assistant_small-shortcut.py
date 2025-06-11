@@ -48,7 +48,7 @@ def main():
     trainloader, testloader = get_dataset_loader()
 
     # Student model: GhostNetV3
-    width = 1.0
+    width = 1.6
     logging.info(f'Using GhostNetV3 with width {width}')
     student = timm.create_model('ghostnetv3_small', width=width, num_classes=10)
     init_weights_kaiming(student)

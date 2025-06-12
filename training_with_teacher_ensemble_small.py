@@ -41,7 +41,7 @@ def main():
     trainloader, testloader = get_dataset_loader()
 
     # Initialize student
-    width = 1.0
+    width = 2.8
     logging.info(f'Using GhostNetV3 with width {width}')
     student = timm.create_model('ghostnetv3_small', width=width, num_classes=10)
     init_weights_kaiming(student)
@@ -81,7 +81,7 @@ def main():
 
     for epoch in range(start_epoch, EPOCHS + 1):
         train(student, device, trainloader, criterion, optimizer, scheduler, epoch, teacher_model=ensemble_teacher)
-        acc = evaluate(student, device, testloader, nn.CrossEntropyLoss(), None)
+        acc = evaluate(student, device, testloader, nn.CrossEntropyLoss())
 
         if acc > best_acc:
             best_acc = acc

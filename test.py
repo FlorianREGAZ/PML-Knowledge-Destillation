@@ -23,18 +23,17 @@ def main():
     logging.info(f'Using device: {device}')
     _, testloader = get_dataset_loader()
 
-    #model = resnet18(pretrained=True, device=device).to(device)
-    model = resnet18(pretrained=True, device=device)
-    teacher_weights = torch.load("assistant_resnet18.pth", map_location=device)
-    model.load_state_dict(teacher_weights)
+    model = timm.create_model('ghostnetv3_small', width=2.8, num_classes=10)
     model.eval()
     model.to(device)
 
+    model.reparameterize()
+
     print(sum(p.numel() for p in model.parameters()))
 
-    acc = evaluate(model, device, testloader, nn.CrossEntropyLoss())
+    #acc = evaluate(model, device, testloader, nn.CrossEntropyLoss())
 
-    logging.info(f'Test complete. Test Accuracy: {acc:.2f}%')
+    #logging.info(f'Test complete. Test Accuracy: {acc:.2f}%')
 
 if __name__ == '__main__':
     import multiprocessing

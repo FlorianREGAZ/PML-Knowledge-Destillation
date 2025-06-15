@@ -21,20 +21,19 @@ def main():
     torch.manual_seed(0)
     device = get_device()
     logging.info(f'Using device: {device}')
-    _, testloader = get_dataset_loader()
+    #_, testloader = get_dataset_loader()
 
     #model = resnet18(pretrained=True, device=device).to(device)
-    model = resnet18(pretrained=True, device=device)
-    teacher_weights = torch.load("assistant_resnet18.pth", map_location=device)
-    model.load_state_dict(teacher_weights)
+    model = timm.create_model('ghostnetv3', width=1.0, num_classes=10)
+    #model.load_state_dict(teacher_weights)
     model.eval()
     model.to(device)
 
     print(sum(p.numel() for p in model.parameters()))
 
-    acc = evaluate(model, device, testloader, nn.CrossEntropyLoss())
+    #acc = evaluate(model, device, testloader, nn.CrossEntropyLoss())
 
-    logging.info(f'Test complete. Test Accuracy: {acc:.2f}%')
+    #logging.info(f'Test complete. Test Accuracy: {acc:.2f}%')
 
 if __name__ == '__main__':
     import multiprocessing

@@ -23,11 +23,11 @@ def main():
     logging.info(f'Using device: {device}')
     #_, testloader = get_dataset_loader()
 
-    #model = resnet18(pretrained=True, device=device).to(device)
-    model = timm.create_model('ghostnetv3', width=1.0, num_classes=10)
-    #model.load_state_dict(teacher_weights)
+    model = timm.create_model('ghostnetv3_small', width=2.8, num_classes=10)
     model.eval()
     model.to(device)
+
+    model.reparameterize()
 
     print(sum(p.numel() for p in model.parameters()))
 

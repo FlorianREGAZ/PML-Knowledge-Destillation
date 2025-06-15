@@ -21,4 +21,4 @@ class DistillationLoss(nn.Module):
             F.softmax(teacher_logits / T, dim=1)
         ) * (T * T)
 
-        return (1 - alpha) * ce_loss + alpha * kd_loss
+        return alpha * ce_loss + (1 - alpha) * kd_loss

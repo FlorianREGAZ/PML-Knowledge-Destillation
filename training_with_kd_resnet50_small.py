@@ -38,7 +38,7 @@ def main():
     teacher.eval()
 
     # Loss, optimizer, scheduler
-    criterion = DistillationLoss(temperature=1.0, alpha=0.5)
+    criterion = DistillationLoss(temperature=4, alpha=0.1)
     optimizer = get_optimizer(student)
     scheduler = get_scheduler(optimizer, training_length=len(trainloader))
 

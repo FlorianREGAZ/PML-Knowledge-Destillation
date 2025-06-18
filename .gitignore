@@ -8,6 +8,7 @@ logs
 pretrained/*
 lightning_logs/
 exported_data/*
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
